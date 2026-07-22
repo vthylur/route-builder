@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
@@ -66,6 +67,8 @@ def write_kml(days: list[RoutedDay], path: Path, pois: list[POI] | None = None) 
         description = [f"Engine: {day.engine}"]
         if day.distance_m is not None:
             description.append(f"Distance: {day.distance_m / 1000:.1f} km")
+        if day.duration_s is not None:
+            description.append(f"Duration: {day.duration_s / 3600:.1f} h")
         description.extend(day.warnings)
         SubElement(placemark, "description").text = " | ".join(description)
         line = SubElement(placemark, "LineString")
@@ -89,3 +92,47 @@ def write_kml(days: list[RoutedDay], path: Path, pois: list[POI] | None = None) 
             SubElement(point, "coordinates").text = f"{poi.longitude:.7f},{poi.latitude:.7f},0"
 
     ElementTree(kml).write(path, encoding="utf-8", xml_declaration=True)
+
+
+def write_geojson(days: list[RoutedDay], path: Path, pois: list[POI] | None = None) -> None:
+    features: list[dict[str, object]] = []
+    for day in sorted(days, key=lambda item: item.day):
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[lon, lat] for lat, lon in day.geometry],
+                },
+                "properties": {
+                    "route_id": day.route_id,
+                    "day": day.day,
+                    "name": day.name,
+                    "engine": day.engine,
+                    "distance_m": day.distance_m,
+                    "duration_s": day.duration_s,
+                    "warnings": day.warnings,
+                },
+            }
+        )
+    for poi in pois or []:
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [poi.longitude, poi.latitude],
+                },
+                "properties": {
+                    "route_id": poi.route_id,
+                    "day": poi.day,
+                    "name": poi.name,
+                    "type": poi.poi_type.value,
+                    "notes": poi.notes,
+                },
+            }
+        )
+    path.write_text(
+        json.dumps({"type": "FeatureCollection", "features": features}, indent=2),
+        encoding="utf-8",
+    )
