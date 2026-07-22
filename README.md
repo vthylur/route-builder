@@ -14,16 +14,19 @@ Route Builder converts structured itinerary waypoints into validated GPX, KML, K
 - POI layers for fuel, accommodation, medical, passes, viewpoints and checkposts
 - Per-segment routing diagnostics
 - Route manifests with bounds, totals and segment metadata
+- Optional waypoint/POI elevation input and daily elevation summaries
+- Vehicle profiles and conservative fuel-range warnings
+- Self-contained HTML expedition reports
 - Offline input validation for duplicate and suspicious waypoints
-- JSON validation report with failures and warnings
-- GitHub Actions tests on Python 3.11 and 3.12
+- JSON validation reports with failures and warnings
+- GitHub Actions CI and tagged release packaging
 
 ## Route waypoint columns
 
-| Route ID | Day | Sequence | Name | Latitude | Longitude | Segment Mode |
-|---|---:|---:|---|---:|---:|---|
+| Route ID | Day | Sequence | Name | Latitude | Longitude | Elevation m | Segment Mode |
+|---|---:|---:|---|---:|---:|---:|---|
 
-`Segment Mode` describes the segment leaving that waypoint. Supported values are `route`, `direct`, `off-road`, `walking`, `ferry`, and `unknown`.
+`Elevation m` is optional. `Segment Mode` describes the segment leaving that waypoint and supports `route`, `direct`, `off-road`, `walking`, `ferry`, and `unknown`.
 
 Only `route` is sent to the selected road-routing engine. Other modes are retained as explicitly labelled direct reference geometry rather than silently snapped to an unsuitable road.
 
@@ -31,8 +34,8 @@ Only `route` is sent to the selected road-routing engine. Other modes are retain
 
 Excel workbooks may contain a `POIs` sheet with:
 
-| Route ID | Type | Name | Latitude | Longitude | Day | Notes |
-|---|---|---|---:|---:|---:|---|
+| Route ID | Type | Name | Latitude | Longitude | Elevation m | Day | Notes |
+|---|---|---|---:|---:|---:|---:|---|
 
 For CSV input, place POIs in a companion file named `<route-file>_pois.csv`. JSON input keeps `waypoints` and `pois` arrays in the same document; see `examples/sample_routes.json`.
 
@@ -64,6 +67,17 @@ route-builder build examples/sample_routes.csv --engine direct --output output
 route-builder build examples/sample_routes.json --engine osrm --output output
 ```
 
+Add fuel intelligence with a vehicle profile:
+
+```bash
+route-builder build examples/sample_routes.json \
+  --engine osrm \
+  --vehicle-profile examples/vehicle_ktm390.json \
+  --output output
+```
+
+A vehicle profile contains fuel capacity, reserve, expected efficiency and a safety margin. Fuel output is a planning aid only; recorded fuel POIs and availability must be independently verified.
+
 Use a self-hosted OSRM-compatible endpoint:
 
 ```bash
@@ -77,7 +91,7 @@ set GRAPHHOPPER_API_KEY=your_key
 route-builder build routes.xlsx --engine graphhopper --output output
 ```
 
-Each route output directory contains daily GPX/GeoJSON files, a master GPX, KML, KMZ, route GeoJSON and `manifest.json`. The output root contains `validation_report.json`.
+Each route output directory contains daily GPX/GeoJSON files, a master GPX, KML, KMZ, route GeoJSON, `manifest.json`, and `report.html`. The output root contains `validation_report.json`.
 
 A routing provider can only follow roads present and connected in its map graph. Route Builder reports failures and non-road segments instead of pretending a straight line is a valid routed road track.
 
