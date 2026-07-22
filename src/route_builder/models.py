@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+from enum import StrEnum
+from pydantic import BaseModel, Field
+
+
+class SegmentMode(StrEnum):
+    ROUTE = "route"
+    DIRECT = "direct"
+
+
+class Waypoint(BaseModel):
+    route_id: str = Field(min_length=1)
+    day: int = Field(ge=1)
+    sequence: int = Field(ge=1)
+    name: str = Field(min_length=1)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    segment_mode: SegmentMode = SegmentMode.ROUTE
+
+
+class DayRoute(BaseModel):
+    route_id: str
+    day: int = Field(ge=1)
+    name: str
+    waypoints: list[Waypoint] = Field(min_length=1)
+
+
+class RoutedDay(BaseModel):
+    route_id: str
+    day: int
+    name: str
+    geometry: list[tuple[float, float]] = Field(min_length=1)
+    distance_m: float | None = None
+    duration_s: float | None = None
+    engine: str
+    warnings: list[str] = Field(default_factory=list)
