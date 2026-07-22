@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "route-builder"
-version = "0.1.0"
-description = "Generate routed GPX, KML and KMZ files from structured route itineraries."
+version = "0.2.0"
+description = "Generate routed GPX, KML, KMZ and GeoJSON expedition packages from structured itineraries."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
