@@ -1,9 +1,20 @@
 from __future__ import annotations
 
 import os
+import re
+
 import httpx
 
 from route_builder.models import DayRoute, RoutedDay, SegmentDiagnostic, SegmentMode, Waypoint
+
+_PROFILE_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+def _validated_profile(profile: str) -> str:
+    value = profile.strip()
+    if not value or not _PROFILE_PATTERN.fullmatch(value):
+        raise ValueError("routing profile must contain only letters, numbers, hyphens or underscores")
+    return value
 
 
 def _pair_day(day: DayRoute, start: Waypoint, end: Waypoint) -> DayRoute:
@@ -32,12 +43,17 @@ class DirectRouter:
 class OSRMRouter:
     name = "osrm"
 
-    def __init__(self, base_url: str = "https://router.project-osrm.org") -> None:
+    def __init__(
+        self,
+        base_url: str = "https://router.project-osrm.org",
+        profile: str = "driving",
+    ) -> None:
         self.base_url = base_url.rstrip("/")
+        self.profile = _validated_profile(profile)
 
     async def route(self, day: DayRoute) -> RoutedDay:
         coordinates = ";".join(f"{p.longitude},{p.latitude}" for p in day.waypoints)
-        url = f"{self.base_url}/route/v1/driving/{coordinates}"
+        url = f"{self.base_url}/route/v1/{self.profile}/{coordinates}"
         params = {"overview": "full", "geometries": "geojson", "steps": "false"}
         async with httpx.AsyncClient(timeout=90) as client:
             response = await client.get(url, params=params)
@@ -53,7 +69,7 @@ class OSRMRouter:
             geometry=[(lat, lon) for lon, lat in route["geometry"]["coordinates"]],
             distance_m=route.get("distance"),
             duration_s=route.get("duration"),
-            engine=self.name,
+            engine=f"{self.name}:{self.profile}",
         )
 
 
@@ -62,7 +78,7 @@ class GraphHopperRouter:
 
     def __init__(self, api_key: str | None = None, profile: str = "car") -> None:
         self.api_key = api_key or os.getenv("GRAPHHOPPER_API_KEY")
-        self.profile = profile
+        self.profile = _validated_profile(profile)
         if not self.api_key:
             raise ValueError("Set GRAPHHOPPER_API_KEY")
 
@@ -87,7 +103,7 @@ class GraphHopperRouter:
             geometry=[(lat, lon) for lon, lat in path["points"]["coordinates"]],
             distance_m=path.get("distance"),
             duration_s=path.get("time", 0) / 1000,
-            engine=self.name,
+            engine=f"{self.name}:{self.profile}",
         )
 
 
@@ -170,11 +186,20 @@ class MixedRouter:
         )
 
 
-def make_router(engine: str, base_url: str | None = None):
+def make_router(
+    engine: str,
+    base_url: str | None = None,
+    routing_profile: str | None = None,
+):
     if engine == "direct":
         return DirectRouter()
     if engine == "osrm":
-        return MixedRouter(OSRMRouter(base_url or "https://router.project-osrm.org"))
+        return MixedRouter(
+            OSRMRouter(
+                base_url or "https://router.project-osrm.org",
+                profile=routing_profile or "driving",
+            )
+        )
     if engine == "graphhopper":
-        return MixedRouter(GraphHopperRouter())
+        return MixedRouter(GraphHopperRouter(profile=routing_profile or "car"))
     raise ValueError("engine must be direct, osrm or graphhopper")
