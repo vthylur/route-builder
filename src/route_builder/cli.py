@@ -14,7 +14,46 @@ from route_builder.models import RoutedDay
 from route_builder.parsers import parse_input, parse_pois
 from route_builder.routing import make_router
 
-app = typer.Typer(no_args_is_help=True, help="Generate GPX/KML/KMZ/GeoJSON route packages.")
+app = typer.Typer(no_args_is_help=True, help="Generate and validate route packages.")
+
+
+def _input_diagnostics(days) -> list[dict[str, object]]:
+    diagnostics: list[dict[str, object]] = []
+    for day in days:
+        warnings = validate_day(day)
+        if warnings:
+            diagnostics.append(
+                {"route_id": day.route_id, "day": day.day, "name": day.name, "warnings": warnings}
+            )
+    return diagnostics
+
+
+@app.command("validate")
+def validate_input(
+    input_file: Path = typer.Argument(..., exists=True, dir_okay=False),
+    report: Path | None = typer.Option(None, help="Optional JSON report path"),
+    strict: bool = typer.Option(False, help="Exit with code 1 when warnings are found"),
+) -> None:
+    """Validate itinerary structure without calling a routing service."""
+    days = parse_input(input_file)
+    pois = parse_pois(input_file)
+    warnings = _input_diagnostics(days)
+    route_ids = sorted({day.route_id for day in days})
+    payload = {
+        "schema_version": "1.0",
+        "input": str(input_file),
+        "route_count": len(route_ids),
+        "day_count": len(days),
+        "waypoint_count": sum(len(day.waypoints) for day in days),
+        "poi_count": len(pois),
+        "warnings": warnings,
+    }
+    if report:
+        report.parent.mkdir(parents=True, exist_ok=True)
+        report.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    typer.echo(json.dumps(payload, indent=2))
+    if strict and warnings:
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -34,11 +73,7 @@ def build(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
-    input_warnings = [
-        {"route_id": day.route_id, "day": day.day, "warnings": validate_day(day)}
-        for day in days
-        if validate_day(day)
-    ]
+    input_warnings = _input_diagnostics(days)
 
     async def run() -> None:
         output.mkdir(parents=True, exist_ok=True)
