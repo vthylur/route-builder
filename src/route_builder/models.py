@@ -30,6 +30,7 @@ class Waypoint(BaseModel):
     name: str = Field(min_length=1)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
+    elevation_m: float | None = None
     segment_mode: SegmentMode = SegmentMode.ROUTE
 
 
@@ -39,8 +40,23 @@ class POI(BaseModel):
     poi_type: POIType = POIType.OTHER
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
+    elevation_m: float | None = None
     day: int | None = Field(default=None, ge=1)
     notes: str | None = None
+
+
+class VehicleProfile(BaseModel):
+    name: str = Field(min_length=1)
+    fuel_capacity_l: float = Field(gt=0)
+    reserve_l: float = Field(default=0, ge=0)
+    efficiency_kmpl: float = Field(gt=0)
+    safety_margin_percent: float = Field(default=15, ge=0, lt=100)
+
+    @property
+    def usable_range_km(self) -> float:
+        usable_l = max(self.fuel_capacity_l - self.reserve_l, 0)
+        nominal = usable_l * self.efficiency_kmpl
+        return nominal * (1 - self.safety_margin_percent / 100)
 
 
 class DayRoute(BaseModel):
