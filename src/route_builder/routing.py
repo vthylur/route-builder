@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import httpx
 
-from route_builder.models import DayRoute, RoutedDay, SegmentMode, Waypoint
+from route_builder.models import DayRoute, RoutedDay, SegmentDiagnostic, SegmentMode, Waypoint
 
 
 def _pair_day(day: DayRoute, start: Waypoint, end: Waypoint) -> DayRoute:
@@ -109,6 +109,7 @@ class MixedRouter:
         has_distance = False
         has_duration = False
         warnings: list[str] = []
+        diagnostics: list[SegmentDiagnostic] = []
 
         direct_modes = {
             SegmentMode.DIRECT,
@@ -117,27 +118,44 @@ class MixedRouter:
             SegmentMode.FERRY,
             SegmentMode.UNKNOWN,
         }
-        for start, end in zip(day.waypoints, day.waypoints[1:], strict=False):
+        for sequence, (start, end) in enumerate(
+            zip(day.waypoints, day.waypoints[1:], strict=False), start=1
+        ):
             segment = _pair_day(day, start, end)
+            segment_warnings: list[str] = []
             if start.segment_mode in direct_modes:
                 routed = await self.direct_router.route(segment)
-                warnings.append(
+                segment_warnings.append(
                     f"{start.name} → {end.name}: {start.segment_mode.value} segment exported as direct geometry."
                 )
             else:
                 routed = await self.road_router.route(segment)
+                segment_warnings.extend(routed.warnings)
 
             points = routed.geometry
             if geometry and points and geometry[-1] == points[0]:
                 points = points[1:]
             geometry.extend(points)
-            warnings.extend(routed.warnings if start.segment_mode == SegmentMode.ROUTE else [])
+            warnings.extend(segment_warnings)
             if routed.distance_m is not None:
                 distance_m += routed.distance_m
                 has_distance = True
             if routed.duration_s is not None:
                 duration_s += routed.duration_s
                 has_duration = True
+            diagnostics.append(
+                SegmentDiagnostic(
+                    sequence=sequence,
+                    start_name=start.name,
+                    end_name=end.name,
+                    mode=start.segment_mode,
+                    engine=routed.engine,
+                    point_count=len(routed.geometry),
+                    distance_m=routed.distance_m,
+                    duration_s=routed.duration_s,
+                    warnings=segment_warnings,
+                )
+            )
 
         return RoutedDay(
             route_id=day.route_id,
@@ -148,6 +166,7 @@ class MixedRouter:
             duration_s=duration_s if has_duration else None,
             engine=self.name,
             warnings=warnings,
+            segments=diagnostics,
         )
 
 
