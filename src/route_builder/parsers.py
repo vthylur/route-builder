@@ -7,13 +7,20 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from route_builder.models import DayRoute, SegmentMode, Waypoint
+from route_builder.models import DayRoute, POI, POIType, SegmentMode, Waypoint
 
 REQUIRED = ("Route ID", "Day", "Sequence", "Name", "Latitude", "Longitude")
+POI_REQUIRED = ("Route ID", "Type", "Name", "Latitude", "Longitude")
 
 
 def _slug(value: str) -> str:
     return "_".join(value.strip().replace("/", " ").split())
+
+
+def _normalise_mode(value: object) -> SegmentMode:
+    raw = str(value or "route").strip().lower().replace("_", "-")
+    aliases = {"routed": "route", "offroad": "off-road", "walk": "walking"}
+    return SegmentMode(aliases.get(raw, raw))
 
 
 def _parse_records(records: Iterable[Mapping[str, object]]) -> list[DayRoute]:
@@ -31,7 +38,7 @@ def _parse_records(records: Iterable[Mapping[str, object]]) -> list[DayRoute]:
             name=str(record["Name"]).strip(),
             latitude=float(record["Latitude"]),
             longitude=float(record["Longitude"]),
-            segment_mode=SegmentMode(str(record.get("Segment Mode") or "route").lower()),
+            segment_mode=_normalise_mode(record.get("Segment Mode")),
         )
         grouped[(point.route_id, point.day)].append(point)
 
@@ -50,6 +57,34 @@ def _parse_records(records: Iterable[Mapping[str, object]]) -> list[DayRoute]:
             )
         )
     return days
+
+
+def _parse_poi_records(records: Iterable[Mapping[str, object]]) -> list[POI]:
+    pois: list[POI] = []
+    for row_number, record in enumerate(records, start=2):
+        if not any(value not in (None, "") for value in record.values()):
+            continue
+        missing = [column for column in POI_REQUIRED if record.get(column) in (None, "")]
+        if missing:
+            raise ValueError(f"POI row {row_number}: missing {', '.join(missing)}")
+        raw_type = str(record["Type"]).strip().lower().replace(" ", "-")
+        try:
+            poi_type = POIType(raw_type)
+        except ValueError:
+            poi_type = POIType.OTHER
+        day_value = record.get("Day")
+        pois.append(
+            POI(
+                route_id=str(record["Route ID"]).strip(),
+                name=str(record["Name"]).strip(),
+                poi_type=poi_type,
+                latitude=float(record["Latitude"]),
+                longitude=float(record["Longitude"]),
+                day=int(day_value) if day_value not in (None, "") else None,
+                notes=str(record.get("Notes") or "").strip() or None,
+            )
+        )
+    return pois
 
 
 def parse_csv(path: Path) -> list[DayRoute]:
@@ -74,6 +109,29 @@ def parse_excel(path: Path) -> list[DayRoute]:
     if missing:
         raise ValueError(f"Missing columns in Route Waypoints: {', '.join(missing)}")
     return _parse_records(dict(zip(headers, row, strict=False)) for row in rows)
+
+
+def parse_pois(path: Path) -> list[POI]:
+    if path.suffix.lower() == ".csv":
+        companion = path.with_name(f"{path.stem}_pois.csv")
+        if not companion.exists():
+            return []
+        with companion.open(newline="", encoding="utf-8-sig") as handle:
+            reader = csv.DictReader(handle)
+            return _parse_poi_records(reader)
+
+    if path.suffix.lower() in {".xlsx", ".xlsm"}:
+        workbook = load_workbook(path, data_only=True, read_only=True)
+        if "POIs" not in workbook.sheetnames:
+            return []
+        rows = workbook["POIs"].iter_rows(values_only=True)
+        try:
+            headers = [str(value).strip() if value is not None else "" for value in next(rows)]
+        except StopIteration:
+            return []
+        return _parse_poi_records(dict(zip(headers, row, strict=False)) for row in rows)
+
+    return []
 
 
 def parse_input(path: Path) -> list[DayRoute]:
