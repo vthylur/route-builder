@@ -9,6 +9,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import typer
 
 from route_builder.diagnostics import route_manifest, validate_day
+from route_builder.elevation import enrich_day_elevations, make_elevation_provider
 from route_builder.exporters import write_geojson, write_gpx, write_kml
 from route_builder.intelligence import elevation_summary, fuel_analysis, load_vehicle_profile
 from route_builder.models import RoutedDay
@@ -83,6 +84,15 @@ def build(
         None,
         help="Provider routing profile, for example driving, car, bike or foot",
     ),
+    elevation_engine: str = typer.Option(
+        "none", help="Elevation provider: none or open-elevation"
+    ),
+    elevation_base_url: str | None = typer.Option(
+        None, help="Custom Open-Elevation-compatible base URL"
+    ),
+    overwrite_elevation: bool = typer.Option(
+        False, help="Replace elevation values already present in the itinerary"
+    ),
     vehicle_profile: Path | None = typer.Option(
         None, exists=True, dir_okay=False, help="Vehicle profile JSON for fuel analysis"
     ),
@@ -97,17 +107,40 @@ def build(
         raise typer.BadParameter("No route days found in the input")
     try:
         router = make_router(engine.lower(), base_url, routing_profile)
+        elevation_provider = make_elevation_provider(elevation_engine, elevation_base_url)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
     input_warnings = _input_diagnostics(days)
-    source_days = {(day.route_id, day.day): day for day in days}
 
     async def run() -> None:
         output.mkdir(parents=True, exist_ok=True)
+        enriched_days = []
+        elevation_results: list[dict[str, object]] = []
+        for day in days:
+            if elevation_provider is None:
+                enriched_days.append(day)
+                continue
+            typer.echo(f"Looking up elevation for {day.route_id} day {day.day}")
+            enriched, result = await enrich_day_elevations(
+                day, elevation_provider, overwrite=overwrite_elevation
+            )
+            enriched_days.append(enriched)
+            elevation_results.append(
+                {
+                    "route_id": day.route_id,
+                    "day": day.day,
+                    "provider": result.provider,
+                    "requested": result.requested,
+                    "populated": result.populated,
+                    "warnings": list(result.warnings),
+                }
+            )
+
+        source_days = {(day.route_id, day.day): day for day in enriched_days}
         routed: list[RoutedDay] = []
         failures: list[dict[str, object]] = []
-        for day in days:
+        for day in enriched_days:
             typer.echo(f"Routing {day.route_id} day {day.day}: {day.name}")
             try:
                 routed.append(await router.route(day))
@@ -148,6 +181,7 @@ def build(
                 day_entry["fuel"] = fuel_analysis(routed_day, profile, route_pois)
             manifest["vehicle_profile"] = profile.model_dump(mode="json") if profile else None
             manifest["routing_profile"] = routing_profile
+            manifest["elevation_engine"] = elevation_engine
             manifest["input_schema"] = schema
             manifests.append(manifest)
             (route_dir / "manifest.json").write_text(
@@ -161,6 +195,8 @@ def build(
             "input_schema": schema,
             "engine": engine,
             "routing_profile": routing_profile,
+            "elevation_engine": elevation_engine,
+            "elevation_results": elevation_results,
             "input": str(input_file),
             "vehicle_profile": profile.model_dump(mode="json") if profile else None,
             "routed_days": len(routed),
