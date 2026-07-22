@@ -12,7 +12,7 @@ from route_builder.diagnostics import route_manifest, validate_day
 from route_builder.exporters import write_geojson, write_gpx, write_kml
 from route_builder.intelligence import elevation_summary, fuel_analysis, load_vehicle_profile
 from route_builder.models import RoutedDay
-from route_builder.parsers import parse_input, parse_pois
+from route_builder.parsers import input_schema_info, parse_input, parse_pois
 from route_builder.reports import write_html_report
 from route_builder.routing import make_router
 
@@ -30,6 +30,18 @@ def _input_diagnostics(days) -> list[dict[str, object]]:
     return diagnostics
 
 
+def _schema_payload(input_file: Path) -> dict[str, object] | None:
+    info = input_schema_info(input_file)
+    if info is None:
+        return None
+    return {
+        "declared_version": info.declared_version,
+        "effective_version": info.effective_version,
+        "migrated": info.migrated,
+        "warnings": list(info.warnings),
+    }
+
+
 @app.command("validate")
 def validate_input(
     input_file: Path = typer.Argument(..., exists=True, dir_okay=False),
@@ -40,9 +52,11 @@ def validate_input(
     days = parse_input(input_file)
     pois = parse_pois(input_file)
     warnings = _input_diagnostics(days)
+    schema = _schema_payload(input_file)
     route_ids = sorted({day.route_id for day in days})
     payload = {
         "schema_version": "1.0",
+        "input_schema": schema,
         "input": str(input_file),
         "route_count": len(route_ids),
         "day_count": len(days),
@@ -54,7 +68,8 @@ def validate_input(
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     typer.echo(json.dumps(payload, indent=2))
-    if strict and warnings:
+    schema_warnings = schema["warnings"] if schema else []
+    if strict and (warnings or schema_warnings):
         raise typer.Exit(code=1)
 
 
@@ -76,6 +91,7 @@ def build(
 ) -> None:
     days = parse_input(input_file)
     pois = parse_pois(input_file)
+    schema = _schema_payload(input_file)
     profile = load_vehicle_profile(vehicle_profile)
     if not days:
         raise typer.BadParameter("No route days found in the input")
@@ -132,6 +148,7 @@ def build(
                 day_entry["fuel"] = fuel_analysis(routed_day, profile, route_pois)
             manifest["vehicle_profile"] = profile.model_dump(mode="json") if profile else None
             manifest["routing_profile"] = routing_profile
+            manifest["input_schema"] = schema
             manifests.append(manifest)
             (route_dir / "manifest.json").write_text(
                 json.dumps(manifest, indent=2), encoding="utf-8"
@@ -141,6 +158,7 @@ def build(
 
         report = {
             "schema_version": "1.0",
+            "input_schema": schema,
             "engine": engine,
             "routing_profile": routing_profile,
             "input": str(input_file),
