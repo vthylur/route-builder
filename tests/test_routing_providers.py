@@ -54,10 +54,33 @@ def test_osrm_success_contract(monkeypatch: pytest.MonkeyPatch) -> None:
 
     routed = asyncio.run(OSRMRouter("https://example.test").route(_day()))
 
-    assert routed.engine == "osrm"
+    assert routed.engine == "osrm:driving"
     assert routed.geometry == [(12.0, 77.0), (13.0, 78.0)]
     assert routed.distance_m == 12345.0
     assert routed.duration_s == 900.0
+    assert "/route/v1/driving/" in str(response.request.url)
+
+
+def test_osrm_custom_profile_is_used_in_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    response = httpx.Response(
+        200,
+        json={
+            "code": "Ok",
+            "routes": [
+                {
+                    "distance": 100.0,
+                    "duration": 10.0,
+                    "geometry": {"coordinates": [[77.0, 12.0], [78.0, 13.0]]},
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: _Client(response))
+
+    routed = asyncio.run(OSRMRouter("https://example.test", profile="motorcycle").route(_day()))
+
+    assert routed.engine == "osrm:motorcycle"
+    assert "/route/v1/motorcycle/" in str(response.request.url)
 
 
 def test_osrm_no_route_is_explicit_failure(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -83,12 +106,13 @@ def test_graphhopper_success_contract(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: _Client(response))
 
-    routed = asyncio.run(GraphHopperRouter(api_key="test-key").route(_day()))
+    routed = asyncio.run(GraphHopperRouter(api_key="test-key", profile="bike").route(_day()))
 
-    assert routed.engine == "graphhopper"
+    assert routed.engine == "graphhopper:bike"
     assert routed.distance_m == 20000.0
     assert routed.duration_s == 1800.0
     assert routed.geometry[-1] == (13.0, 78.0)
+    assert response.request.url.params.get("profile") == "bike"
 
 
 def test_graphhopper_missing_paths_is_explicit_failure(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -97,6 +121,11 @@ def test_graphhopper_missing_paths_is_explicit_failure(monkeypatch: pytest.Monke
 
     with pytest.raises(RuntimeError, match="GraphHopper could not route"):
         asyncio.run(GraphHopperRouter(api_key="test-key").route(_day()))
+
+
+def test_invalid_profile_is_rejected() -> None:
+    with pytest.raises(ValueError, match="routing profile"):
+        OSRMRouter(profile="../../unsafe")
 
 
 def test_http_error_is_not_silently_converted_to_direct_geometry(
