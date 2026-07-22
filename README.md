@@ -6,21 +6,38 @@ Route Builder converts structured itinerary waypoints into daily GPX tracks and 
 
 - CSV and Excel waypoint input
 - Multiple routes and days in one input
-- Routing providers:
-  - `direct` for explicit reference lines only
-  - `osrm` for an OSRM-compatible service
-  - `graphhopper` using `GRAPHHOPPER_API_KEY`
-- One GPX per riding day
-- One master GPX per route
-- One colour-coded KML/KMZ per route
+- Mixed per-segment routing
+- Routing providers: `direct`, `osrm`, and `graphhopper`
+- Daily and master GPX files
+- Colour-coded KML/KMZ route folders
+- POI layers for fuel, accommodation, medical, passes, viewpoints and checkposts
 - JSON validation report with failures and warnings
+- GitHub Actions tests on Python 3.11 and 3.12
 
-## Input columns
+## Route waypoint columns
 
 | Route ID | Day | Sequence | Name | Latitude | Longitude | Segment Mode |
 |---|---:|---:|---|---:|---:|---|
 
-`Segment Mode` may be `route` or `direct`. The MVP records this field; segment-level mixed routing is the next implementation milestone.
+`Segment Mode` describes the segment leaving that waypoint. Supported values are:
+
+- `route`
+- `direct`
+- `off-road`
+- `walking`
+- `ferry`
+- `unknown`
+
+Only `route` is sent to the selected road-routing engine. Other modes are retained as explicitly labelled direct reference geometry rather than silently snapped to an unsuitable road.
+
+## POI input
+
+Excel workbooks may contain a `POIs` sheet with:
+
+| Route ID | Type | Name | Latitude | Longitude | Day | Notes |
+|---|---|---|---:|---:|---:|---|
+
+For CSV input, place POIs in a companion file named `<route-file>_pois.csv`.
 
 ## Install
 
@@ -34,33 +51,26 @@ pip install -e ".[dev]"
 pytest
 ```
 
-## Generate a reference package
+## Generate
 
 ```bash
 route-builder build examples/sample_routes.csv --engine direct --output output
-```
-
-## Generate using OSRM
-
-```bash
 route-builder build examples/sample_routes.csv --engine osrm --output output
 ```
 
-Use a self-hosted endpoint:
+Use a self-hosted OSRM-compatible endpoint:
 
 ```bash
 route-builder build routes.xlsx --engine osrm --base-url http://localhost:5000
 ```
 
-## Generate using GraphHopper
+GraphHopper:
 
 ```bash
 set GRAPHHOPPER_API_KEY=your_key
 route-builder build routes.xlsx --engine graphhopper --output output
 ```
 
-## Important limitation
-
-A routing provider can only follow roads present and connected in its map graph. Route Builder reports unroutable sections rather than pretending a straight line is a valid road track.
+A routing provider can only follow roads present and connected in its map graph. Route Builder reports failures and non-road segments instead of pretending a straight line is a valid routed road track.
 
 See `AGENTS.md` for Codex development instructions.
