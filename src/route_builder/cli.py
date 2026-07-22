@@ -64,6 +64,10 @@ def build(
     engine: str = typer.Option("direct", help="direct, osrm or graphhopper"),
     output: Path = typer.Option(Path("output")),
     base_url: str | None = typer.Option(None, help="Custom OSRM-compatible base URL"),
+    routing_profile: str | None = typer.Option(
+        None,
+        help="Provider routing profile, for example driving, car, bike or foot",
+    ),
     vehicle_profile: Path | None = typer.Option(
         None, exists=True, dir_okay=False, help="Vehicle profile JSON for fuel analysis"
     ),
@@ -76,7 +80,7 @@ def build(
     if not days:
         raise typer.BadParameter("No route days found in the input")
     try:
-        router = make_router(engine.lower(), base_url)
+        router = make_router(engine.lower(), base_url, routing_profile)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -127,6 +131,7 @@ def build(
                 day_entry["elevation"] = elevation_summary(source)
                 day_entry["fuel"] = fuel_analysis(routed_day, profile, route_pois)
             manifest["vehicle_profile"] = profile.model_dump(mode="json") if profile else None
+            manifest["routing_profile"] = routing_profile
             manifests.append(manifest)
             (route_dir / "manifest.json").write_text(
                 json.dumps(manifest, indent=2), encoding="utf-8"
@@ -137,6 +142,7 @@ def build(
         report = {
             "schema_version": "1.0",
             "engine": engine,
+            "routing_profile": routing_profile,
             "input": str(input_file),
             "vehicle_profile": profile.model_dump(mode="json") if profile else None,
             "routed_days": len(routed),
