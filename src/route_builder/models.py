@@ -7,6 +7,20 @@ from pydantic import BaseModel, Field
 class SegmentMode(StrEnum):
     ROUTE = "route"
     DIRECT = "direct"
+    OFF_ROAD = "off-road"
+    WALKING = "walking"
+    FERRY = "ferry"
+    UNKNOWN = "unknown"
+
+
+class POIType(StrEnum):
+    FUEL = "fuel"
+    ACCOMMODATION = "accommodation"
+    MEDICAL = "medical"
+    PASS = "pass"
+    VIEWPOINT = "viewpoint"
+    CHECKPOST = "checkpost"
+    OTHER = "other"
 
 
 class Waypoint(BaseModel):
@@ -17,6 +31,16 @@ class Waypoint(BaseModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     segment_mode: SegmentMode = SegmentMode.ROUTE
+
+
+class POI(BaseModel):
+    route_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    poi_type: POIType = POIType.OTHER
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    day: int | None = Field(default=None, ge=1)
+    notes: str | None = None
 
 
 class DayRoute(BaseModel):
