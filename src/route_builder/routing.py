@@ -3,7 +3,16 @@ from __future__ import annotations
 import os
 import httpx
 
-from route_builder.models import DayRoute, RoutedDay
+from route_builder.models import DayRoute, RoutedDay, SegmentMode, Waypoint
+
+
+def _pair_day(day: DayRoute, start: Waypoint, end: Waypoint) -> DayRoute:
+    return DayRoute(
+        route_id=day.route_id,
+        day=day.day,
+        name=f"{start.name}_to_{end.name}",
+        waypoints=[start, end],
+    )
 
 
 class DirectRouter:
@@ -82,11 +91,71 @@ class GraphHopperRouter:
         )
 
 
+class MixedRouter:
+    """Route each waypoint pair according to the start waypoint's Segment Mode."""
+
+    def __init__(self, road_router) -> None:
+        self.road_router = road_router
+        self.direct_router = DirectRouter()
+        self.name = f"mixed:{road_router.name}"
+
+    async def route(self, day: DayRoute) -> RoutedDay:
+        if len(day.waypoints) == 1:
+            return await self.direct_router.route(day)
+
+        geometry: list[tuple[float, float]] = []
+        distance_m = 0.0
+        duration_s = 0.0
+        has_distance = False
+        has_duration = False
+        warnings: list[str] = []
+
+        direct_modes = {
+            SegmentMode.DIRECT,
+            SegmentMode.OFF_ROAD,
+            SegmentMode.WALKING,
+            SegmentMode.FERRY,
+            SegmentMode.UNKNOWN,
+        }
+        for start, end in zip(day.waypoints, day.waypoints[1:], strict=False):
+            segment = _pair_day(day, start, end)
+            if start.segment_mode in direct_modes:
+                routed = await self.direct_router.route(segment)
+                warnings.append(
+                    f"{start.name} → {end.name}: {start.segment_mode.value} segment exported as direct geometry."
+                )
+            else:
+                routed = await self.road_router.route(segment)
+
+            points = routed.geometry
+            if geometry and points and geometry[-1] == points[0]:
+                points = points[1:]
+            geometry.extend(points)
+            warnings.extend(routed.warnings if start.segment_mode == SegmentMode.ROUTE else [])
+            if routed.distance_m is not None:
+                distance_m += routed.distance_m
+                has_distance = True
+            if routed.duration_s is not None:
+                duration_s += routed.duration_s
+                has_duration = True
+
+        return RoutedDay(
+            route_id=day.route_id,
+            day=day.day,
+            name=day.name,
+            geometry=geometry,
+            distance_m=distance_m if has_distance else None,
+            duration_s=duration_s if has_duration else None,
+            engine=self.name,
+            warnings=warnings,
+        )
+
+
 def make_router(engine: str, base_url: str | None = None):
     if engine == "direct":
         return DirectRouter()
     if engine == "osrm":
-        return OSRMRouter(base_url or "https://router.project-osrm.org")
+        return MixedRouter(OSRMRouter(base_url or "https://router.project-osrm.org"))
     if engine == "graphhopper":
-        return GraphHopperRouter()
+        return MixedRouter(GraphHopperRouter())
     raise ValueError("engine must be direct, osrm or graphhopper")
