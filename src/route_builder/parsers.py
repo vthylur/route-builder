@@ -24,6 +24,10 @@ def _normalise_mode(value: object) -> SegmentMode:
     return SegmentMode(aliases.get(raw, raw))
 
 
+def _optional_float(value: object) -> float | None:
+    return float(value) if value not in (None, "") else None
+
+
 def _parse_records(records: Iterable[Mapping[str, object]]) -> list[DayRoute]:
     grouped: dict[tuple[str, int], list[Waypoint]] = defaultdict(list)
     for row_number, record in enumerate(records, start=2):
@@ -39,6 +43,7 @@ def _parse_records(records: Iterable[Mapping[str, object]]) -> list[DayRoute]:
             name=str(record["Name"]).strip(),
             latitude=float(record["Latitude"]),
             longitude=float(record["Longitude"]),
+            elevation_m=_optional_float(record.get("Elevation m")),
             segment_mode=_normalise_mode(record.get("Segment Mode")),
         )
         grouped[(point.route_id, point.day)].append(point)
@@ -81,6 +86,7 @@ def _parse_poi_records(records: Iterable[Mapping[str, object]]) -> list[POI]:
                 poi_type=poi_type,
                 latitude=float(record["Latitude"]),
                 longitude=float(record["Longitude"]),
+                elevation_m=_optional_float(record.get("Elevation m")),
                 day=int(day_value) if day_value not in (None, "") else None,
                 notes=str(record.get("Notes") or "").strip() or None,
             )
@@ -132,6 +138,7 @@ def parse_json(path: Path) -> list[DayRoute]:
             "Name": item.get("name"),
             "Latitude": item.get("latitude"),
             "Longitude": item.get("longitude"),
+            "Elevation m": item.get("elevation_m"),
             "Segment Mode": item.get("segment_mode", "route"),
         }
         for item in records
@@ -171,6 +178,7 @@ def parse_pois(path: Path) -> list[POI]:
                 "Name": item.get("name"),
                 "Latitude": item.get("latitude"),
                 "Longitude": item.get("longitude"),
+                "Elevation m": item.get("elevation_m"),
                 "Day": item.get("day"),
                 "Notes": item.get("notes"),
             }
