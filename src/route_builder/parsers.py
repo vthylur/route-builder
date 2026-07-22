@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from pathlib import Path
@@ -111,14 +112,41 @@ def parse_excel(path: Path) -> list[DayRoute]:
     return _parse_records(dict(zip(headers, row, strict=False)) for row in rows)
 
 
+def _json_payload(path: Path) -> dict[str, object]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("JSON input must be an object")
+    return payload
+
+
+def parse_json(path: Path) -> list[DayRoute]:
+    payload = _json_payload(path)
+    records = payload.get("waypoints", [])
+    if not isinstance(records, list):
+        raise ValueError("JSON 'waypoints' must be an array")
+    normalized = [
+        {
+            "Route ID": item.get("route_id"),
+            "Day": item.get("day"),
+            "Sequence": item.get("sequence"),
+            "Name": item.get("name"),
+            "Latitude": item.get("latitude"),
+            "Longitude": item.get("longitude"),
+            "Segment Mode": item.get("segment_mode", "route"),
+        }
+        for item in records
+        if isinstance(item, dict)
+    ]
+    return _parse_records(normalized)
+
+
 def parse_pois(path: Path) -> list[POI]:
     if path.suffix.lower() == ".csv":
         companion = path.with_name(f"{path.stem}_pois.csv")
         if not companion.exists():
             return []
         with companion.open(newline="", encoding="utf-8-sig") as handle:
-            reader = csv.DictReader(handle)
-            return _parse_poi_records(reader)
+            return _parse_poi_records(csv.DictReader(handle))
 
     if path.suffix.lower() in {".xlsx", ".xlsm"}:
         workbook = load_workbook(path, data_only=True, read_only=True)
@@ -131,6 +159,26 @@ def parse_pois(path: Path) -> list[POI]:
             return []
         return _parse_poi_records(dict(zip(headers, row, strict=False)) for row in rows)
 
+    if path.suffix.lower() == ".json":
+        payload = _json_payload(path)
+        records = payload.get("pois", [])
+        if not isinstance(records, list):
+            raise ValueError("JSON 'pois' must be an array")
+        normalized = [
+            {
+                "Route ID": item.get("route_id"),
+                "Type": item.get("type", "other"),
+                "Name": item.get("name"),
+                "Latitude": item.get("latitude"),
+                "Longitude": item.get("longitude"),
+                "Day": item.get("day"),
+                "Notes": item.get("notes"),
+            }
+            for item in records
+            if isinstance(item, dict)
+        ]
+        return _parse_poi_records(normalized)
+
     return []
 
 
@@ -139,4 +187,6 @@ def parse_input(path: Path) -> list[DayRoute]:
         return parse_csv(path)
     if path.suffix.lower() in {".xlsx", ".xlsm"}:
         return parse_excel(path)
-    raise ValueError("Unsupported input. Use CSV or XLSX.")
+    if path.suffix.lower() == ".json":
+        return parse_json(path)
+    raise ValueError("Unsupported input. Use CSV, XLSX or JSON.")
