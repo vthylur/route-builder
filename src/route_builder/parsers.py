@@ -9,6 +9,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from route_builder.models import DayRoute, POI, POIType, SegmentMode, Waypoint
+from route_builder.schema import SchemaInfo, inspect_schema
 
 REQUIRED = ("Route ID", "Day", "Sequence", "Name", "Latitude", "Longitude")
 POI_REQUIRED = ("Route ID", "Type", "Name", "Latitude", "Longitude")
@@ -122,7 +123,18 @@ def _json_payload(path: Path) -> dict[str, object]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("JSON input must be an object")
+    inspect_schema(payload)
     return payload
+
+
+def input_schema_info(path: Path) -> SchemaInfo | None:
+    """Return JSON schema compatibility information; tabular formats are unversioned."""
+    if path.suffix.lower() != ".json":
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("JSON input must be an object")
+    return inspect_schema(payload)
 
 
 def parse_json(path: Path) -> list[DayRoute]:
