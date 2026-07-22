@@ -8,12 +8,13 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import typer
 
-from route_builder.exporters import write_gpx, write_kml
+from route_builder.diagnostics import route_manifest, validate_day
+from route_builder.exporters import write_geojson, write_gpx, write_kml
 from route_builder.models import RoutedDay
 from route_builder.parsers import parse_input, parse_pois
 from route_builder.routing import make_router
 
-app = typer.Typer(no_args_is_help=True, help="Generate GPX/KML/KMZ route packages.")
+app = typer.Typer(no_args_is_help=True, help="Generate GPX/KML/KMZ/GeoJSON route packages.")
 
 
 @app.command()
@@ -32,6 +33,12 @@ def build(
         router = make_router(engine.lower(), base_url)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+    input_warnings = [
+        {"route_id": day.route_id, "day": day.day, "warnings": validate_day(day)}
+        for day in days
+        if validate_day(day)
+    ]
 
     async def run() -> None:
         output.mkdir(parents=True, exist_ok=True)
@@ -52,6 +59,7 @@ def build(
         for day in routed:
             grouped[day.route_id].append(day)
 
+        manifests: list[dict[str, object]] = []
         for route_id, route_days in grouped.items():
             route_pois = [poi for poi in pois if poi.route_id == route_id]
             route_dir = output / route_id
@@ -60,27 +68,42 @@ def build(
             for day in route_days:
                 day_pois = [poi for poi in route_pois if poi.day in (None, day.day)]
                 write_gpx([day], daily_dir / f"{day.name}.gpx", day_pois)
+                write_geojson([day], daily_dir / f"{day.name}.geojson", day_pois)
             write_gpx(route_days, route_dir / f"{route_id}_master.gpx", route_pois)
+            write_geojson(route_days, route_dir / f"{route_id}.geojson", route_pois)
             kml_path = route_dir / f"{route_id}.kml"
             write_kml(route_days, kml_path, route_pois)
             with ZipFile(route_dir / f"{route_id}.kmz", "w", ZIP_DEFLATED) as archive:
                 archive.write(kml_path, arcname="doc.kml")
+            manifest = route_manifest(route_id, route_days, route_pois)
+            manifests.append(manifest)
+            (route_dir / "manifest.json").write_text(
+                json.dumps(manifest, indent=2), encoding="utf-8"
+            )
 
         report = {
+            "schema_version": "1.0",
             "engine": engine,
             "input": str(input_file),
             "routed_days": len(routed),
             "poi_count": len(pois),
             "failed_days": len(failures),
             "failures": failures,
-            "warnings": [
+            "input_warnings": input_warnings,
+            "routing_warnings": [
                 {"route_id": day.route_id, "day": day.day, "warnings": day.warnings}
                 for day in routed
                 if day.warnings
             ],
+            "routes": manifests,
         }
-        (output / "validation_report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-        typer.echo(f"Completed {len(routed)} day(s), {len(pois)} POI(s); failed {len(failures)} day(s).")
+        (output / "validation_report.json").write_text(
+            json.dumps(report, indent=2), encoding="utf-8"
+        )
+        typer.echo(
+            f"Completed {len(routed)} day(s), {len(pois)} POI(s); "
+            f"failed {len(failures)} day(s), input warnings {len(input_warnings)}."
+        )
         if failures and not continue_on_error:
             raise typer.Exit(code=1)
 
