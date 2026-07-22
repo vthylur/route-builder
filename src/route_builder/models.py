@@ -50,6 +50,18 @@ class DayRoute(BaseModel):
     waypoints: list[Waypoint] = Field(min_length=1)
 
 
+class SegmentDiagnostic(BaseModel):
+    sequence: int = Field(ge=1)
+    start_name: str
+    end_name: str
+    mode: SegmentMode
+    engine: str
+    point_count: int = Field(ge=1)
+    distance_m: float | None = None
+    duration_s: float | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
 class RoutedDay(BaseModel):
     route_id: str
     day: int
@@ -59,3 +71,4 @@ class RoutedDay(BaseModel):
     duration_s: float | None = None
     engine: str
     warnings: list[str] = Field(default_factory=list)
+    segments: list[SegmentDiagnostic] = Field(default_factory=list)
