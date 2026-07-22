@@ -10,8 +10,10 @@ import typer
 
 from route_builder.diagnostics import route_manifest, validate_day
 from route_builder.exporters import write_geojson, write_gpx, write_kml
+from route_builder.intelligence import elevation_summary, fuel_analysis, load_vehicle_profile
 from route_builder.models import RoutedDay
 from route_builder.parsers import parse_input, parse_pois
+from route_builder.reports import write_html_report
 from route_builder.routing import make_router
 
 app = typer.Typer(no_args_is_help=True, help="Generate and validate route packages.")
@@ -62,10 +64,15 @@ def build(
     engine: str = typer.Option("direct", help="direct, osrm or graphhopper"),
     output: Path = typer.Option(Path("output")),
     base_url: str | None = typer.Option(None, help="Custom OSRM-compatible base URL"),
+    vehicle_profile: Path | None = typer.Option(
+        None, exists=True, dir_okay=False, help="Vehicle profile JSON for fuel analysis"
+    ),
+    html_report: bool = typer.Option(True, help="Generate a self-contained expedition report"),
     continue_on_error: bool = typer.Option(False, help="Continue and report failed days"),
 ) -> None:
     days = parse_input(input_file)
     pois = parse_pois(input_file)
+    profile = load_vehicle_profile(vehicle_profile)
     if not days:
         raise typer.BadParameter("No route days found in the input")
     try:
@@ -74,6 +81,7 @@ def build(
         raise typer.BadParameter(str(exc)) from exc
 
     input_warnings = _input_diagnostics(days)
+    source_days = {(day.route_id, day.day): day for day in days}
 
     async def run() -> None:
         output.mkdir(parents=True, exist_ok=True)
@@ -110,16 +118,27 @@ def build(
             write_kml(route_days, kml_path, route_pois)
             with ZipFile(route_dir / f"{route_id}.kmz", "w", ZIP_DEFLATED) as archive:
                 archive.write(kml_path, arcname="doc.kml")
+
             manifest = route_manifest(route_id, route_days, route_pois)
+            for day_entry in manifest["days"]:
+                key = (route_id, day_entry["day"])
+                source = source_days[key]
+                routed_day = next(item for item in route_days if item.day == day_entry["day"])
+                day_entry["elevation"] = elevation_summary(source)
+                day_entry["fuel"] = fuel_analysis(routed_day, profile, route_pois)
+            manifest["vehicle_profile"] = profile.model_dump(mode="json") if profile else None
             manifests.append(manifest)
             (route_dir / "manifest.json").write_text(
                 json.dumps(manifest, indent=2), encoding="utf-8"
             )
+            if html_report:
+                write_html_report(manifest, route_dir / "report.html")
 
         report = {
             "schema_version": "1.0",
             "engine": engine,
             "input": str(input_file),
+            "vehicle_profile": profile.model_dump(mode="json") if profile else None,
             "routed_days": len(routed),
             "poi_count": len(pois),
             "failed_days": len(failures),
