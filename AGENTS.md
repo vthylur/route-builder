@@ -11,6 +11,8 @@ Build a reusable route generator that reads structured itineraries and creates G
 - No API keys in source control; use environment variables.
 - Add or update tests for every behavior change.
 - Exported files must state which engine created them and include routing warnings.
+- Segment Mode applies to the segment leaving a waypoint.
+- Non-road modes must remain visibly labelled in reports and exports.
 
 ## Commands
 - Install: `pip install -e '.[dev]'`
@@ -19,4 +21,10 @@ Build a reusable route generator that reads structured itineraries and creates G
 - Generate: `route-builder build examples/sample_routes.csv --engine direct`
 
 ## Current milestone
-Deliver a reliable CLI MVP with CSV/Excel parsing, direct/OSRM/GraphHopper adapters, GPX/KML/KMZ export and a machine-readable validation report.
+Strengthen validation and expedition intelligence:
+- segment-level failure reporting
+- route statistics
+- distance sanity checks
+- duplicate/near-duplicate waypoint detection
+- GeoJSON export
+- richer route manifest
