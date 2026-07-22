@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
-from route_builder.models import RoutedDay
+from route_builder.models import POI, RoutedDay
 
 COLOURS = [
     "ff0000ff", "ff00a5ff", "ff00ff00", "ffff0000", "ffff00ff",
@@ -21,7 +21,7 @@ def _add_gpx_track(root: Element, day: RoutedDay) -> None:
         SubElement(segment, "trkpt", {"lat": f"{latitude:.7f}", "lon": f"{longitude:.7f}"})
 
 
-def write_gpx(days: list[RoutedDay], path: Path) -> None:
+def write_gpx(days: list[RoutedDay], path: Path, pois: list[POI] | None = None) -> None:
     engines = ",".join(sorted({day.engine for day in days}))
     root = Element(
         "gpx",
@@ -33,12 +33,22 @@ def write_gpx(days: list[RoutedDay], path: Path) -> None:
     )
     metadata = SubElement(root, "metadata")
     SubElement(metadata, "name").text = path.stem
+    for poi in pois or []:
+        waypoint = SubElement(
+            root,
+            "wpt",
+            {"lat": f"{poi.latitude:.7f}", "lon": f"{poi.longitude:.7f}"},
+        )
+        SubElement(waypoint, "name").text = poi.name
+        SubElement(waypoint, "type").text = poi.poi_type.value
+        if poi.notes:
+            SubElement(waypoint, "desc").text = poi.notes
     for day in sorted(days, key=lambda item: item.day):
         _add_gpx_track(root, day)
     ElementTree(root).write(path, encoding="utf-8", xml_declaration=True)
 
 
-def write_kml(days: list[RoutedDay], path: Path) -> None:
+def write_kml(days: list[RoutedDay], path: Path, pois: list[POI] | None = None) -> None:
     kml = Element("kml", {"xmlns": "http://www.opengis.net/kml/2.2"})
     document = SubElement(kml, "Document")
     SubElement(document, "name").text = path.stem
@@ -63,4 +73,19 @@ def write_kml(days: list[RoutedDay], path: Path) -> None:
         SubElement(line, "coordinates").text = " ".join(
             f"{longitude:.7f},{latitude:.7f},0" for latitude, longitude in day.geometry
         )
+
+    grouped: dict[str, list[POI]] = {}
+    for poi in pois or []:
+        grouped.setdefault(poi.poi_type.value, []).append(poi)
+    for poi_type, items in sorted(grouped.items()):
+        folder = SubElement(document, "Folder")
+        SubElement(folder, "name").text = poi_type.replace("-", " ").title()
+        for poi in items:
+            placemark = SubElement(folder, "Placemark")
+            SubElement(placemark, "name").text = poi.name
+            if poi.notes:
+                SubElement(placemark, "description").text = poi.notes
+            point = SubElement(placemark, "Point")
+            SubElement(point, "coordinates").text = f"{poi.longitude:.7f},{poi.latitude:.7f},0"
+
     ElementTree(kml).write(path, encoding="utf-8", xml_declaration=True)
