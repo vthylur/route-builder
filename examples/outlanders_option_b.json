@@ -1,0 +1,519 @@
+{
+  "schema_version": "1.0",
+  "waypoints": [
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 1,
+      "sequence": 1,
+      "name": "Srinagar Airport",
+      "latitude": 33.9871,
+      "longitude": 74.7743,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 1,
+      "sequence": 2,
+      "name": "Dal Lake",
+      "latitude": 34.1106,
+      "longitude": 74.8683,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 1,
+      "sequence": 3,
+      "name": "Sonamarg",
+      "latitude": 34.303,
+      "longitude": 75.293,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 2,
+      "sequence": 1,
+      "name": "Sonamarg",
+      "latitude": 34.303,
+      "longitude": 75.293,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 2,
+      "sequence": 2,
+      "name": "Zoji La",
+      "latitude": 34.2786,
+      "longitude": 75.4972,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 2,
+      "sequence": 3,
+      "name": "Drass War Memorial",
+      "latitude": 34.4285,
+      "longitude": 75.751,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 2,
+      "sequence": 4,
+      "name": "Drass",
+      "latitude": 34.4497,
+      "longitude": 75.7715,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 3,
+      "sequence": 1,
+      "name": "Drass War Memorial",
+      "latitude": 34.4285,
+      "longitude": 75.751,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 3,
+      "sequence": 2,
+      "name": "Maanman Top",
+      "latitude": 34.355,
+      "longitude": 75.97,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 3,
+      "sequence": 3,
+      "name": "Umba La",
+      "latitude": 34.25,
+      "longitude": 76.105,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 3,
+      "sequence": 4,
+      "name": "Sankoo",
+      "latitude": 34.286,
+      "longitude": 75.985,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 3,
+      "sequence": 5,
+      "name": "Panikhar",
+      "latitude": 34.045,
+      "longitude": 76.134,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 4,
+      "sequence": 1,
+      "name": "Panikhar",
+      "latitude": 34.045,
+      "longitude": 76.134,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 4,
+      "sequence": 2,
+      "name": "Parkachik",
+      "latitude": 33.851,
+      "longitude": 76.116,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 4,
+      "sequence": 3,
+      "name": "Rangdum",
+      "latitude": 33.536,
+      "longitude": 76.328,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 4,
+      "sequence": 4,
+      "name": "Pensi La",
+      "latitude": 33.827,
+      "longitude": 76.346,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 4,
+      "sequence": 5,
+      "name": "Day 4 waypoint 5",
+      "latitude": 33.827,
+      "longitude": 76.346,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 4,
+      "sequence": 6,
+      "name": "Padum",
+      "latitude": 33.466,
+      "longitude": 76.884,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 5,
+      "sequence": 1,
+      "name": "Padum",
+      "latitude": 33.466,
+      "longitude": 76.884,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 5,
+      "sequence": 2,
+      "name": "Karsha Monastery",
+      "latitude": 33.494,
+      "longitude": 76.878,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 5,
+      "sequence": 3,
+      "name": "Zangla",
+      "latitude": 33.624,
+      "longitude": 76.984,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 5,
+      "sequence": 4,
+      "name": "Day 5 waypoint 4",
+      "latitude": 33.494,
+      "longitude": 76.878,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 5,
+      "sequence": 5,
+      "name": "Padum",
+      "latitude": 33.466,
+      "longitude": 76.884,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 1,
+      "name": "Padum",
+      "latitude": 33.466,
+      "longitude": 76.884,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 2,
+      "name": "Purne",
+      "latitude": 33.259,
+      "longitude": 77.168,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 3,
+      "name": "Gonbo Rangjon",
+      "latitude": 32.888,
+      "longitude": 77.093,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 4,
+      "name": "Shinku La",
+      "latitude": 32.96,
+      "longitude": 77.1,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 5,
+      "name": "Day 6 waypoint 5",
+      "latitude": 32.888,
+      "longitude": 77.093,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 6,
+      "name": "Day 6 waypoint 6",
+      "latitude": 33.259,
+      "longitude": 77.168,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 7,
+      "name": "Purne",
+      "latitude": 33.259,
+      "longitude": 77.168,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 8,
+      "name": "Day 6 waypoint 8",
+      "latitude": 33.259,
+      "longitude": 77.168,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 6,
+      "sequence": 9,
+      "name": "Padum",
+      "latitude": 33.466,
+      "longitude": 76.884,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 1,
+      "name": "Padum",
+      "latitude": 33.466,
+      "longitude": 76.884,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 2,
+      "name": "Zangla",
+      "latitude": 33.624,
+      "longitude": 76.984,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 3,
+      "name": "Lingshed",
+      "latitude": 33.766,
+      "longitude": 77.105,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 4,
+      "name": "Nerak",
+      "latitude": 33.93,
+      "longitude": 77.101,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 5,
+      "name": "Chilling",
+      "latitude": 34.066,
+      "longitude": 77.204,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 6,
+      "name": "Nimmu",
+      "latitude": 34.198,
+      "longitude": 77.336,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 7,
+      "sequence": 7,
+      "name": "Leh",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 1,
+      "name": "Leh",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 2,
+      "name": "Upshi",
+      "latitude": 33.927,
+      "longitude": 77.745,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 3,
+      "name": "Tanglang La",
+      "latitude": 33.834,
+      "longitude": 77.975,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 4,
+      "name": "Debring",
+      "latitude": 33.493,
+      "longitude": 77.777,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 5,
+      "name": "Day 8 waypoint 5",
+      "latitude": 33.254,
+      "longitude": 77.807,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 6,
+      "name": "Tso Kar",
+      "latitude": 33.315,
+      "longitude": 78.01,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 8,
+      "sequence": 7,
+      "name": "Day 8 waypoint 7",
+      "latitude": 33.315,
+      "longitude": 78.01,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 1,
+      "name": "Tso Kar",
+      "latitude": 33.315,
+      "longitude": 78.01,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 2,
+      "name": "Day 9 waypoint 2",
+      "latitude": 33.205,
+      "longitude": 78.3,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 3,
+      "name": "Day 9 waypoint 3",
+      "latitude": 33.254,
+      "longitude": 77.807,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 4,
+      "name": "Debring",
+      "latitude": 33.493,
+      "longitude": 77.777,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 5,
+      "name": "Tanglang La",
+      "latitude": 33.834,
+      "longitude": 77.975,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 6,
+      "name": "Upshi",
+      "latitude": 33.927,
+      "longitude": 77.745,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 7,
+      "name": "Day 9 waypoint 7",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 9,
+      "sequence": 8,
+      "name": "Leh",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 10,
+      "sequence": 1,
+      "name": "Leh",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 11,
+      "sequence": 1,
+      "name": "Leh",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "OUTLANDERS_OPTION_B",
+      "day": 11,
+      "sequence": 2,
+      "name": "Leh Airport",
+      "latitude": 34.1359,
+      "longitude": 77.5465,
+      "segment_mode": "route"
+    }
+  ],
+  "pois": []
+}
