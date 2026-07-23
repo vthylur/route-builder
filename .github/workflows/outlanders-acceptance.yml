@@ -1,0 +1,81 @@
+name: Outlanders Acceptance
+
+on:
+  pull_request:
+    paths:
+      - "examples/outlanders_option_b.json"
+      - "src/**"
+      - "pyproject.toml"
+      - ".github/workflows/outlanders-acceptance.yml"
+  workflow_dispatch:
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "."
+
+      - name: Validate itinerary
+        run: |
+          route-builder validate examples/outlanders_option_b.json --report outlanders-output/input-validation.json
+
+      - name: Build road-routed package with OSRM
+        run: |
+          route-builder build examples/outlanders_option_b.json \
+            --engine osrm \
+            --routing-profile driving \
+            --vehicle-profile examples/vehicle_ktm390.json \
+            --continue-on-error \
+            --output outlanders-output
+
+      - name: Verify generated package
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          import zipfile
+
+          root = Path("outlanders-output")
+          report = json.loads((root / "validation_report.json").read_text())
+          assert report["routed_days"] > 0, report
+          route_dir = root / "OUTLANDERS_OPTION_B"
+          required = [
+              route_dir / "OUTLANDERS_OPTION_B_master.gpx",
+              route_dir / "OUTLANDERS_OPTION_B.kml",
+              route_dir / "OUTLANDERS_OPTION_B.kmz",
+              route_dir / "OUTLANDERS_OPTION_B.geojson",
+              route_dir / "manifest.json",
+              route_dir / "report.html",
+          ]
+          for path in required:
+              assert path.exists() and path.stat().st_size > 0, path
+          ET.parse(route_dir / "OUTLANDERS_OPTION_B_master.gpx")
+          ET.parse(route_dir / "OUTLANDERS_OPTION_B.kml")
+          json.loads((route_dir / "OUTLANDERS_OPTION_B.geojson").read_text())
+          with zipfile.ZipFile(route_dir / "OUTLANDERS_OPTION_B.kmz") as archive:
+              assert "doc.kml" in archive.namelist()
+          print(json.dumps({
+              "routed_days": report["routed_days"],
+              "failed_days": report["failed_days"],
+              "failures": report["failures"],
+          }, indent=2))
+          PY
+
+      - name: Upload generated route package
+        uses: actions/upload-artifact@v4
+        with:
+          name: outlanders-option-b-road-routed
+          path: outlanders-output
+          if-no-files-found: error
+          retention-days: 14
