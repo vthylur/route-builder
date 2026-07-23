@@ -1,0 +1,6 @@
+Route ID,Day,Sequence,Name,Latitude,Longitude,Segment Mode
+R01,1,1,Leh,34.1526,77.5771,route
+R01,1,2,Nimmu,34.1983,77.3342,route
+R01,1,3,Leh,34.1526,77.5771,route
+R01,2,1,Leh,34.1526,77.5771,route
+R01,2,2,Karu,33.9955,77.7479,route

@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "waypoints": [
+    {
+      "route_id": "R01",
+      "day": 1,
+      "sequence": 1,
+      "name": "Leh",
+      "latitude": 34.1526,
+      "longitude": 77.5771,
+      "segment_mode": "route"
+    },
+    {
+      "route_id": "R01",
+      "day": 1,
+      "sequence": 2,
+      "name": "Nimmu",
+      "latitude": 34.1983,
+      "longitude": 77.3342,
+      "segment_mode": "off-road"
+    }
+  ],
+  "pois": [
+    {
+      "route_id": "R01",
+      "type": "fuel",
+      "name": "Nimmu Fuel Station",
+      "latitude": 34.203,
+      "longitude": 77.286,
+      "day": 1,
+      "notes": "Confirm operating hours before departure"
+    }
+  ]
+}

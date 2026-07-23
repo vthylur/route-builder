@@ -1,0 +1,7 @@
+{
+  "name": "KTM 390 Adventure",
+  "fuel_capacity_l": 14.5,
+  "reserve_l": 2.0,
+  "efficiency_kmpl": 25.0,
+  "safety_margin_percent": 20.0
+}

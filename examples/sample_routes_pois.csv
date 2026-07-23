@@ -1,0 +1,4 @@
+Route ID,Type,Name,Latitude,Longitude,Day,Notes
+R01,fuel,Nimmu Fuel Station,34.2030,77.2860,1,Confirm operating hours before departure
+R01,medical,Leh Hospital,34.1526,77.5771,,Major medical reference
+R01,pass,Fotu La,34.2917,76.7992,1,High-altitude pass
